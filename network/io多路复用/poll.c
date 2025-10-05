@@ -37,12 +37,14 @@ int main() {
     }
 
     struct pollfd fds[1024]={0};
+    //初始化监听套接字的pollfd结构
     fds[sockfd].fd=sockfd;
-    fds[sockfd].events=POLLIN;
+    fds[sockfd].events=POLLIN;//--events:需要关注的事件 POLLIN:可读
     int maxfd=sockfd;
 
     while(1){
         int nready=poll(fds,maxfd+1,-1);
+        //revents:由内核填充的实际发生的事件
         if(fds[sockfd].revents&POLLIN){
             struct sockaddr_in clientaddr;
             socklen_t len=sizeof(clientaddr);
@@ -61,7 +63,7 @@ int main() {
                 int recv_len = recv(i, buf, 128, 0);
                 if(recv_len <= 0) {
                     printf("disconnect\n");
-                    fds[i].fd=-1;
+                    fds[i].fd=-1;//poll忽略fd=-1的条目
                     fds[i].revents=0;
                     close(i);
                     continue;
