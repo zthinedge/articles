@@ -8,22 +8,6 @@
 #include<sys/select.h>
 #define PORT 8888
 
-void *client_thread(void *arg) {
-    int client_fd = *(int*)arg;
-    free(arg); 
-    
-    while(1) {
-        char buf[128] = {0};
-        int recv_len = recv(client_fd, buf, sizeof(buf), 0);
-        if(recv_len <= 0) {
-            break;
-        }
-        send(client_fd, buf, recv_len, 0);
-    }
-    close(client_fd);
-    return NULL;
-} 
-
 int main() {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sockfd == -1) {
@@ -58,7 +42,7 @@ int main() {
     int maxfd=sockfd;
     printf("loop\n");
     while(1){
-        rset=rfds;
+        rset=rfds;//副本  -- select会修改文件描述符集合
         int nready=select(maxfd+1,&rset,NULL,NULL,NULL);//返回事件的个数
 
         if(FD_ISSET(sockfd,&rset)){
@@ -68,7 +52,7 @@ int main() {
 
             int clientfd=accept(sockfd,(struct sockaddr*)&clientaddr,&len);
             printf("sockfd：%d\n",clientfd);
-            FD_SET(clientfd,&rfds);
+            FD_SET(clientfd,&rfds);//放入总集
             maxfd=clientfd;
         }
         int i=0;
@@ -78,7 +62,7 @@ int main() {
                 int recv_len = recv(i, buf, 128, 0);
                 if(recv_len <= 0) {
                     printf("disconnect\n");
-                    FD_CLR(i,&rfds);
+                    FD_CLR(i,&rfds);//不需要再监控该客户端
                     close(i);
                     continue;
                 }
