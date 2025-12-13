@@ -7,12 +7,12 @@ ThreadPool::ThreadPool(size_t threadnum):stop_(false){
         {
             printf("create thread(%ld).\n",syscall(SYS_gettid));     
             std::cout << "子线程：" << std::this_thread::get_id() << std::endl;
-            while(stop_=false){
+            while(stop_==false){
                 std::function<void()>task;  //存放从队列中取出的任务
                 {
                     std::unique_lock<std::mutex>lock(this->mutex_);
                     //等待生产者的条件变量，休眠等待唤醒
-                    this->conditon_.wait(lock,[this]
+                    this->conditon_.wait(lock,[this]()
                     {
                         return ((this->stop_==true)||(this->taskqueue_.empty()==false));//线程池停止或任务队列有任务
                     });
@@ -42,10 +42,13 @@ ThreadPool::~ThreadPool(){
     }
 }
 
-void ThreadPool::addtask(std::function<void()>fn){
+bool ThreadPool::addtask(std::function<void()>fn){
+
     {
         std::lock_guard<std::mutex>lock(mutex_);
+        if(stop_)return false;
         taskqueue_.push(fn);
     }
     conditon_.notify_one();
+    return true;
 }

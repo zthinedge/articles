@@ -22,7 +22,7 @@ private:
 public:
     ThreadPool(size_t threadnum);
     ~ThreadPool();
-    void addtask(std::function<void()>fn);
+    bool addtask(std::function<void()>fn);
 };
 
 
